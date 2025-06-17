@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 import 'package:tpl/screens/auth/login.dart';
-import 'package:tpl/theme/app_theme.dart';
+import '../../services/api_service.dart';
 
 class RegistrationPage extends StatefulWidget {
-  const RegistrationPage({Key? key}) : super(key: key);
+  const RegistrationPage({super.key});
 
   @override
   _RegistrationPageState createState() => _RegistrationPageState();
@@ -16,7 +14,8 @@ class _RegistrationPageState extends State<RegistrationPage> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
   final TextEditingController _phoneNumberController = TextEditingController();
 
   bool _obscurePassword = true;
@@ -43,35 +42,24 @@ class _RegistrationPageState extends State<RegistrationPage> {
     setState(() => _isLoading = true);
 
     try {
-      final response = await http.post(
-        Uri.parse('http://127.0.0.1:8000/api/v1/auth/users/'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'name': _nameController.text.trim(),
-          'email': _emailController.text.trim(),
-          'phone_number': _phoneNumberController.text.trim(),
-          'password': _passwordController.text,
-          're_password': _confirmPasswordController.text,
-        }),
+      await ApiService().register(
+        name: _nameController.text.trim(),
+        email: _emailController.text.trim(),
+        phoneNumber: _phoneNumberController.text.trim(),
+        password: _passwordController.text,
+        confirmPassword: _confirmPasswordController.text,
       );
 
       if (!mounted) return;
 
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        _showSnackBar('Registration successful! Please log in.', Colors.green);
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const LoginPage()),
-        );
-      } else {
-        print('Error: ${response.statusCode}');
-        print('Response body: ${response.body}');
-        final Map<String, dynamic> responseBody = jsonDecode(response.body);
-        String errorMessage = responseBody['message'] ?? 'Registration failed. Please try again.';
-        _showSnackBar(errorMessage, Colors.red);
-      }
+      _showSnackBar('Registration successful! Please log in.', Colors.green);
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const LoginPage()),
+      );
     } catch (e) {
-      _showSnackBar('Network error. Please check your connection.', Colors.red);
+      if (!mounted) return;
+      _showSnackBar(e.toString().replaceFirst('Exception: ', ''), Colors.red);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -103,7 +91,9 @@ class _RegistrationPageState extends State<RegistrationPage> {
     return TextFormField(
       controller: controller,
       obscureText: obscureText ?? false,
-      autovalidateMode: _autoValidate ? AutovalidateMode.onUserInteraction : AutovalidateMode.disabled,
+      autovalidateMode: _autoValidate
+          ? AutovalidateMode.onUserInteraction
+          : AutovalidateMode.disabled,
       decoration: InputDecoration(
         labelText: label,
         enabledBorder: OutlineInputBorder(
@@ -112,21 +102,32 @@ class _RegistrationPageState extends State<RegistrationPage> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Theme.of(context).primaryColor, width: 2.0),
+          borderSide: BorderSide(
+            color: Theme.of(context).primaryColor,
+            width: 2.0,
+          ),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 1.5),
+          borderSide: BorderSide(
+            color: Theme.of(context).colorScheme.error,
+            width: 1.5,
+          ),
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 2.0),
+          borderSide: BorderSide(
+            color: Theme.of(context).colorScheme.error,
+            width: 2.0,
+          ),
         ),
         suffixIcon: isPassword && onToggleVisibility != null
             ? IconButton(
-          icon: Icon(obscureText! ? Icons.visibility : Icons.visibility_off),
-          onPressed: onToggleVisibility,
-        )
+                icon: Icon(
+                  obscureText! ? Icons.visibility : Icons.visibility_off,
+                ),
+                onPressed: onToggleVisibility,
+              )
             : null,
         filled: true,
         fillColor: isLightMode ? Colors.grey[50] : Colors.grey[900],
@@ -138,10 +139,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Create Account'),
-        elevation: 0,
-      ),
+      appBar: AppBar(title: const Text('Create Account'), elevation: 0),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16.0),
@@ -210,7 +208,8 @@ class _RegistrationPageState extends State<RegistrationPage> {
                   label: 'Password',
                   isPassword: true,
                   obscureText: _obscurePassword,
-                  onToggleVisibility: () => setState(() => _obscurePassword = !_obscurePassword),
+                  onToggleVisibility: () =>
+                      setState(() => _obscurePassword = !_obscurePassword),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Please enter your password';
@@ -233,7 +232,9 @@ class _RegistrationPageState extends State<RegistrationPage> {
                   label: 'Confirm Password',
                   isPassword: true,
                   obscureText: _obscureConfirmPassword,
-                  onToggleVisibility: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
+                  onToggleVisibility: () => setState(
+                    () => _obscureConfirmPassword = !_obscureConfirmPassword,
+                  ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Please confirm your password';
@@ -247,9 +248,19 @@ class _RegistrationPageState extends State<RegistrationPage> {
                 const SizedBox(height: 24),
                 ElevatedButton(
                   onPressed: _isLoading ? null : _register,
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    backgroundColor: Theme.of(context).primaryColor,
+                  ),
                   child: _isLoading
-                      ? const CircularProgressIndicator()
-                      : const Text('Create Account'),
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text(
+                          'Create Account',
+                          style: TextStyle(fontSize: 16, color: Colors.white),
+                        ),
                 ),
                 const SizedBox(height: 16),
                 Row(
@@ -259,11 +270,13 @@ class _RegistrationPageState extends State<RegistrationPage> {
                     GestureDetector(
                       onTap: () => Navigator.pushReplacement(
                         context,
-                        MaterialPageRoute(builder: (context) => const LoginPage()),
+                        MaterialPageRoute(
+                          builder: (context) => const LoginPage(),
+                        ),
                       ),
-                      child: const Text(
+                      child: Text(
                         'Sign In',
-                        style: TextStyle(color: Colors.blue),
+                        style: TextStyle(color: Theme.of(context).primaryColor),
                       ),
                     ),
                   ],

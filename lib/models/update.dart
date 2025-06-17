@@ -1,5 +1,3 @@
-// lib/models/update.dart
-
 class Update {
   final int id;
   final String cover;
@@ -20,15 +18,19 @@ class Update {
   });
 
   factory Update.fromJson(Map<String, dynamic> json) {
-    return Update(
-      id: json['id'],
-      cover: json['cover'],
-      title: json['title'],
-      slug: json['slug'],
-      update: json['update'],
-      timestamp: DateTime.parse(json['timestamp']),
-      category: Category.fromJson(json['category']),
-    );
+    try {
+      return Update(
+        id: json['id'] ?? 0,
+        cover: json['cover'] ?? '',
+        title: json['title'] ?? 'No Title',
+        slug: json['slug'] ?? '',
+        update: json['update'] ?? '',
+        timestamp: DateTime.tryParse(json['timestamp'] ?? '') ?? DateTime.now(),
+        category: Category.fromJson(json['category'] ?? {}),
+      );
+    } catch (e) {
+      throw Exception('Failed to parse Update: $e');
+    }
   }
 }
 
@@ -37,17 +39,17 @@ class Category {
   final String name;
   final String slug;
 
-  Category({
-    required this.id,
-    required this.name,
-    required this.slug,
-  });
+  Category({required this.id, required this.name, required this.slug});
 
   factory Category.fromJson(Map<String, dynamic> json) {
-    return Category(
-      id: json['id'],
-      name: json['name'],
-      slug: json['slug'],
-    );
+    try {
+      return Category(
+        id: json['id'] ?? 0,
+        name: json['name'] ?? 'Unknown',
+        slug: json['slug'] ?? '',
+      );
+    } catch (e) {
+      throw Exception('Failed to parse Category: $e');
+    }
   }
 }
